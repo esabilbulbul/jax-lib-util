@@ -27,6 +27,8 @@ public class MQ implements ExceptionListener
     public static final int MQ_MODE_WRITE = 2;
     
     private int               gQMode;
+    public String             gQName;
+    public String             gQURL;
     
     ActiveMQConnectionFactory gConnectionFactory;
     Connection                gConnection;
@@ -137,10 +139,28 @@ public class MQ implements ExceptionListener
         
     }
     
+    public boolean reset()
+    {
+        try
+        {
+            close();
+                
+            open(gQMode, gQName, gQURL);
+            
+            return true;
+        }
+        catch(Exception e)
+        {
+            return false;
+        }
+    }
+
     public boolean open(int pMQMode, String pQueuePath, String pQueueName) throws Exception
     {
         gQMode = pMQMode;
-        
+        gQName = pQueueName;
+        gQURL  = pQueuePath;
+
         switch(gQMode)
         {
             case MQ_MODE_READ:
