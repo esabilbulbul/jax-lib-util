@@ -1442,6 +1442,20 @@ public final class Util
     //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     public static class Files
     {
+        public static boolean MoveFile(String pSourcePath, String pDestPath)
+        {
+            try
+            {
+                File fileToMove = new File(pSourcePath);
+
+                return fileToMove.renameTo(new File(pDestPath));
+            }
+            catch(Exception e)
+            {
+                return false;
+            }
+        }
+        
         //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         public static String GenerateFileName_w_YYMMDDHHM1(String pFileFolder, String pFileName, String pExtension)
