@@ -322,11 +322,12 @@ public class MQ implements ExceptionListener
     
     public String pop(int pTimeoutseconds) throws Exception
     {
+        Message message; 
         try
         {
             String text = "";
             //Wait for a message
-            Message message = gConsumer.receive(pTimeoutseconds);
+            message = gConsumer.receive(pTimeoutseconds);
 
             if (message==null)
                 return null;
