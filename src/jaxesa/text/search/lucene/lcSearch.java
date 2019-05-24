@@ -83,7 +83,7 @@ public class lcSearch
 
         String sPath = "";
         if (gINDEX_DIR.trim().length()>0)
-            sPath = gINDEX_ROOT + "\\" + gINDEX_DIR;
+            sPath = gINDEX_ROOT + "/" + gINDEX_DIR;
         else
             sPath = gINDEX_ROOT;
 
@@ -142,7 +142,7 @@ public class lcSearch
                 sIndexDir = gINDEX_DIR;
 
             if (sIndexDir.trim().length()>0)
-                sPath = sIndexRoot + "\\" + sIndexDir;
+                sPath = sIndexRoot + "/" + sIndexDir;
             else
                 sPath = sIndexRoot;
             

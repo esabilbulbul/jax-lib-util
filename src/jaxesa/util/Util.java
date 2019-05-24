@@ -42,7 +42,7 @@ import javax.mail.Session;
 import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
-import javax.xml.bind.DatatypeConverter;
+/*import javax.xml.bind.DatatypeConverter;*/
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -78,7 +78,8 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
-
+import java.util.zip.Checksum;
+import java.util.zip.CRC32;
 /**
  *
  * @author Administrator
@@ -89,9 +90,17 @@ public final class Util
     {
         
     }
-    
+
     public static class Session
     {
+        //psMethodName = REST API Method
+        public static String calcSessionHash(String psMethodName)
+        {
+            String sHash = Long.toString(Util.crypto.crc32.calculate(psMethodName));
+            
+            return sHash;
+        }
+        
         public static SessionObject parseSessionInfo(String psUserName_at_SessionId)
         {
             SessionObject SObj   = new SessionObject();
@@ -1463,7 +1472,7 @@ public final class Util
             String sFileExtensionYYYYMMDDHH = GetFileNameExtensionYYMMDDHHM1();
             
             //Create File Name
-            String sFileName = pFileFolder + "\\" + pFileName + "_" +  sFileExtensionYYYYMMDDHH + "." + pExtension;
+            String sFileName = pFileFolder + "/" + pFileName + "_" +  sFileExtensionYYYYMMDDHH + "." + pExtension;
             
             return sFileName;
         }
@@ -2075,6 +2084,26 @@ public final class Util
 
     }
     
+    public static class Methods
+    {
+        //Returns the caller of getName name
+        public static String getName()
+        {
+            //index 0 returns "getName"
+            //index 1 returns the caller of "getName"
+            String nameOfMethod = new Throwable().getStackTrace()[1].getMethodName();
+            return nameOfMethod;
+        }
+        
+        public static String hash()
+        {
+            //index 1 returns the caller
+            String CallerMethodName = new Throwable().getStackTrace()[1].getMethodName();
+            String sHash = Util.Session.calcSessionHash(CallerMethodName);
+            return sHash;
+        }
+    }
+    
     //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     //
     //                          SubClass Retention
@@ -2082,7 +2111,7 @@ public final class Util
     //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     public static class Retention
     {
-    
+        
         public static boolean isClassValid(String pEntityClassName)
         {
             try
@@ -2325,6 +2354,27 @@ public final class Util
                 {
                     return "";
                 }
+            }
+        }
+        
+        public static class crc32
+        {
+            public static long calculate(String psInput)
+            {
+                 String input = psInput;
+
+                // get bytes from string
+                byte bytes[] = input.getBytes();
+
+                Checksum checksum = new CRC32();
+
+                // update the current checksum with the specified array of bytes
+                checksum.update(bytes, 0, bytes.length);
+
+                // get the current checksum value
+                long checksumValue = checksum.getValue();
+                
+                return checksumValue;
             }
         }
     }
