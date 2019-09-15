@@ -241,6 +241,7 @@ public final class Util
             return pStr;
         }
         
+        //also is amount
         public static boolean isNumeric(String pStr)
         {
             for (char c : pStr.toCharArray())
@@ -248,6 +249,25 @@ public final class Util
                 if (!Character.isDigit(c)) return false;
             }
             return true;
+        }
+        
+        public static boolean isAmount(String pStr)
+        {
+            int i=0;
+            for (char c : pStr.trim().toCharArray())
+            {
+                
+                if (!Character.isDigit(c)) 
+                {
+                    if ((c=='.') || (c==',') || ((c=='-') && (i==0)) )//minus in first position
+                        continue;
+                    else
+                        return false;
+                }
+                i++;
+            }
+            return true;
+
         }
         
         //Shows pattern match result between two strings
