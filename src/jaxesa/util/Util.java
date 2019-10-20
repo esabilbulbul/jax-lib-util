@@ -251,8 +251,10 @@ public final class Util
             return true;
         }
         
+        //must have Dot sign otherwise use isNumeric
         public static boolean isAmount(String pStr)
         {
+            boolean bDotFound = false;
             int i=0;
             for (char c : pStr.trim().toCharArray())
             {
@@ -260,13 +262,24 @@ public final class Util
                 if (!Character.isDigit(c)) 
                 {
                     if ((c=='.') || (c==',') || ((c=='-') && (i==0)) )//minus in first position
+                    {
+                        if (c=='.')
+                        {
+                            bDotFound = true;
+                        }
+                        
                         continue;
+                    }
                     else
                         return false;
                 }
                 i++;
             }
-            return true;
+            
+            if (bDotFound==true)
+                return true;
+            else
+                return false;
 
         }
         
