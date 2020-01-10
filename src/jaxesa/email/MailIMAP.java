@@ -6,8 +6,6 @@
 package jaxesa.email;
 
 import com.sun.mail.imap.IMAPFolder;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Properties;
 import javax.mail.FetchProfile;
 import javax.mail.Folder;
@@ -61,6 +59,7 @@ public class MailIMAP {
         Properties properties = new Properties();
         properties.put("mail.imap.host", host);
         Session emailSession = Session.getDefaultInstance(properties);
+        // TEST If you want to show detailed session information:
         // emailSession.setDebug(true);
         store = emailSession.getStore("imaps"); // NoSuchProviderException
         store.connect(host, username, password); // MessagingException
@@ -74,6 +73,7 @@ public class MailIMAP {
         store.close(); // MessagingException
     }
 
+    /*
     public Message[] getMessagesByIDSubject(long start, long end, String subject) throws Exception {
         List<Message> messages = new ArrayList<>();
 
@@ -93,6 +93,16 @@ public class MailIMAP {
 
         return messages.toArray(new Message[messages.size()]);
     }
+     */
+    public Message[] getMessages(long start, long end) throws Exception {
+        Message[] messages = folder.getMessagesByUID(start, end); // MessagingException
+
+        FetchProfile fp = new FetchProfile();
+        fp.add(FetchProfile.Item.ENVELOPE);
+        folder.fetch(messages, fp); // MessagingException
+
+        return messages;
+    }
 
     public long getLastID(Message[] messages) throws Exception {
         if (messages.length > 0) {
@@ -109,6 +119,7 @@ public class MailIMAP {
         }
     }
 
+    /*
     public String[] getHTMLContentOfMessages(Message[] messages) throws Exception {
         List<String> htmlContents = new ArrayList<>();
 
@@ -125,6 +136,22 @@ public class MailIMAP {
         }
 
         return htmlContents.toArray(new String[htmlContents.size()]);
+    }
+     */
+    public String getHTMLContent(Message message) throws Exception {
+        String htmlContent = null;
+
+        if (message.isMimeType("multipart/*")) { // MessagingException
+            Multipart mp = (Multipart) message.getContent(); // IOException, MessagingException
+            int count = mp.getCount(); // MessagingException
+            for (int i = 0; i < count; i++) {
+                if (mp.getBodyPart(i).isMimeType("text/html")) { // MessagingException
+                    htmlContent = (String) mp.getBodyPart(i).getContent();
+                }
+            }
+        }
+
+        return htmlContent;
     }
 
     // TODO Alınan mesaj dizisindeki mesajların eklerinin (attachments) kaydedilmesi ile ilgili bir metot eklenecek.
