@@ -6,13 +6,20 @@
 package jaxesa.email;
 
 import com.sun.mail.imap.IMAPFolder;
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Properties;
 import javax.mail.FetchProfile;
 import javax.mail.Folder;
 import javax.mail.Message;
 import javax.mail.Multipart;
+import javax.mail.Part;
 import javax.mail.Session;
 import javax.mail.Store;
+import javax.mail.internet.MimeBodyPart;
+import javax.mail.internet.MimeUtility;
 
 /**
  *
@@ -73,27 +80,6 @@ public class MailIMAP {
         store.close(); // MessagingException
     }
 
-    /*
-    public Message[] getMessagesByIDSubject(long start, long end, String subject) throws Exception {
-        List<Message> messages = new ArrayList<>();
-
-        Message[] tempMessages = folder.getMessagesByUID(start, end); // MessagingException
-
-        FetchProfile fp = new FetchProfile();
-        fp.add(FetchProfile.Item.ENVELOPE);
-        folder.fetch(tempMessages, fp); // MessagingException
-
-        for (Message message : tempMessages) {
-            String message_subject = message.getSubject();
-            // If the mail does not have a subject, subject value becomes null.
-            if (message_subject != null && message_subject.contains(subject)) { // MessagingException
-                messages.add(message);
-            }
-        }
-
-        return messages.toArray(new Message[messages.size()]);
-    }
-     */
     public Message[] getMessages(long start, long end) throws Exception {
         Message[] messages = folder.getMessagesByUID(start, end); // MessagingException
 
@@ -119,25 +105,6 @@ public class MailIMAP {
         }
     }
 
-    /*
-    public String[] getHTMLContentOfMessages(Message[] messages) throws Exception {
-        List<String> htmlContents = new ArrayList<>();
-
-        for (Message message : messages) {
-            if (message.isMimeType("multipart/*")) { // MessagingException
-                Multipart mp = (Multipart) message.getContent(); // IOException, MessagingException
-                int count = mp.getCount(); // MessagingException
-                for (int i = 0; i < count; i++) {
-                    if (mp.getBodyPart(i).isMimeType("text/html")) { // MessagingException
-                        htmlContents.add((String) mp.getBodyPart(i).getContent()); // MessagingException, IOException
-                    }
-                }
-            }
-        }
-
-        return htmlContents.toArray(new String[htmlContents.size()]);
-    }
-     */
     public String getHTMLContent(Message message) throws Exception {
         String htmlContent = null;
 
@@ -155,4 +122,22 @@ public class MailIMAP {
     }
 
     // TODO Alınan mesaj dizisindeki mesajların eklerinin (attachments) kaydedilmesi ile ilgili bir metot eklenecek.
+    public void saveAttachments(Message message, String folder) throws Exception {
+        Path path = Paths.get(folder);
+        if (!Files.isWritable(path)) {
+            throw new Exception("Attachment folder is not writable.");
+        }
+
+        if (message.isMimeType("multipart/*")) { // MessagingException
+            Multipart mp = (Multipart) message.getContent(); // IOException, MessagingException
+            int count = mp.getCount(); // MessagingException
+            for (int i = 0; i < count; i++) {
+                MimeBodyPart part = (MimeBodyPart) mp.getBodyPart(i);
+                if (Part.ATTACHMENT.equalsIgnoreCase(part.getDisposition())) {
+                    String fileName = part.getFileName();
+                    part.saveFile(folder + File.separator + MimeUtility.decodeText(fileName));
+                }
+            }
+        }
+    }
 }
