@@ -37,6 +37,12 @@ public final class RSA
 {
     public static int RSA_KEY_SIZE = 1024;
 
+    //must be multiple of 1024
+    public static void setKeyPairLength(int pLen)
+    {
+        RSA_KEY_SIZE = pLen;
+    }
+
     public static ssoRSAKeyPair generateKeyPair()
     {
         KeyPairGenerator kpg;

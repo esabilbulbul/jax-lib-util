@@ -80,6 +80,8 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 import java.util.zip.Checksum;
 import java.util.zip.CRC32;
+import jaxesa.framework.misc.HTTPReqParameter;
+import jaxesa.framework.misc.frameworkMisc;
 /**
  *
  * @author Administrator
@@ -128,6 +130,14 @@ public final class Util
             }
             
             return SObj;
+        }
+    }
+    
+    public static class framework 
+    {
+        public String getParam(String pName, ArrayList<HTTPReqParameter> paParams)
+        {
+            return frameworkMisc.getParameterValue(pName, paParams);
         }
     }
     
@@ -2330,10 +2340,13 @@ public final class Util
     {
         public static class rsa
         {
-            public static ssoRSAKeyPair generateRSAKeyPair()
+            public static ssoRSAKeyPair generateRSAKeyPair(int pLen)
             {
                 ssoRSAKeyPair newKeyPair = new ssoRSAKeyPair();
 
+                if (pLen%1024==0)//otherwise default 1024
+                    RSA.setKeyPairLength(pLen);
+                
                 newKeyPair = RSA.generateKeyPair();
                 
                 return newKeyPair;
@@ -2349,6 +2362,7 @@ public final class Util
                 return RSA.decodePrivateKey(psKey);
             }
 
+            //max 128 length (1024 bits )
             public static byte[] encrypt(PrivateKey pPriKey, String psData)
             {
                 try
