@@ -14,11 +14,11 @@ import java.lang.annotation.Target;
  *
  * @author Administrator
  */
-    
-    @Retention(RetentionPolicy.RUNTIME)
-    @Target({ElementType.TYPE, ElementType.METHOD}) //on class level
-    public @interface Path
-    {
-        public String value() default "";
-    }
+
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.TYPE, ElementType.METHOD}) //on class level
+public @interface Path
+{
+    public String value() default "";
+}
 

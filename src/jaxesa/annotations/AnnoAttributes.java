@@ -55,6 +55,8 @@ public class AnnoAttributes
     public ElementType              Type;//Class, Method and etc.
     public MediaType                Consumes;
     public MethodTypes              MethodType;
+    public VerificationType         TokenVerification;
+    public boolean                  Login;
     public String                   ClassPath;
     public String                   MethodPrototype;  //ClassPath @Path + Method Path @Path + Parameters 
     public String                   MethodPath;       //Method Path @Path
@@ -76,5 +78,6 @@ public class AnnoAttributes
         ServiceParameters   =   new ArrayList<Parameter>();
         ClassPath           =   "";
         Produces            =   MediaType.PLAINTEXT;
+        TokenVerification   =   VerificationType.NONE;
     }
 }
