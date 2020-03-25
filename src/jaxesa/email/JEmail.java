@@ -54,7 +54,7 @@ public class JEmail
             Session mailSession = Session.getInstance(getProperties(pFrom), new PasswordAuthenticator(pFrom, pPWD));
 
             MimeMessage msg = new MimeMessage(mailSession);
-            msg.setFrom(new InternetAddress(pFrom));
+            msg.setFrom(new InternetAddress(pFrom, "Shipshuk"));
             msg.addRecipient(Message.RecipientType.TO, new InternetAddress(pTo));
 
             msg.setSubject(pSubject, "UTF-8");

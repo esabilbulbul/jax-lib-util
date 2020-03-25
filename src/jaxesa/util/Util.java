@@ -80,8 +80,12 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 import java.util.zip.Checksum;
 import java.util.zip.CRC32;
+import jaxesa.crypto.RSAMisc;
+import jaxesa.crypto.ssoSessionKeys;
 import jaxesa.framework.misc.HTTPReqParameter;
 import jaxesa.framework.misc.frameworkMisc;
+import jaxesa.redis.RedisAPI;
+import redis.clients.jedis.Jedis;
 /**
  *
  * @author Administrator
@@ -130,6 +134,134 @@ public final class Util
             }
             
             return SObj;
+        }
+    }
+    
+    //Memory DB
+    public static class Redis
+    {
+        
+        public static Jedis getConnection()
+        {
+            return RedisAPI.getConnection();
+        }
+        
+        public static void releaseConnection(Jedis pJedis)
+        {
+            pJedis.close();
+        }
+
+        public static String connect(String psHost, int piPort, int pMaxConNumber)
+        {
+            return RedisAPI.connect(psHost, piPort, pMaxConNumber);
+        }
+
+        public static class JNumber
+        {
+            public static long increase(Jedis jedis, String pKey,int pBy)
+            {
+                return RedisAPI.JNumber.increase(jedis, pKey, pBy);
+            }
+            
+            public static long decrease(Jedis jedis, String pKey, int pBy)
+            {
+                return RedisAPI.JNumber.decrease(jedis, pKey, pBy);
+
+            }
+
+        }
+
+        //this uses JString in base
+        public static class JObject
+        {
+            public static String set(Jedis jedis, String pKey, Object poVal)
+            {
+                String sVal = Util.JSON.Convert2JSON(poVal).toString();
+
+                return RedisAPI.JString.set(jedis, pKey, sVal);
+            }
+
+            public static String set(Jedis jedis, String pKey, Object poVal, int piExpirySeconds)
+            {
+                String sVal = Util.JSON.Convert2JSON(poVal).toString();
+
+                return RedisAPI.JString.set(jedis, pKey, sVal, piExpirySeconds);
+            }
+
+            public static <T extends Object> T get(Jedis jedis, String pKey, Class<T> pClass)
+            {
+                String sObj = RedisAPI.JString.get(jedis, pKey);
+
+                return (T)Util.JSON.Convert2Obj(sObj, pClass);
+            }
+
+        }
+
+        public static class JString
+        {
+            public static String set(Jedis jedis, String pKey, String pVal, int piExpirySeconds)
+            {
+                return RedisAPI.JString.set(jedis, pKey, pVal, piExpirySeconds);
+            }
+            
+            public static String set(Jedis jedis, String pKey, String pVal)
+            {
+                return RedisAPI.JString.set(jedis, pKey, pVal);
+            }
+            
+            public static String get(Jedis jedis, String pKey)
+            {
+                return RedisAPI.JString.get(jedis, pKey);
+            }
+
+            public static long remove(Jedis jedis, String pKey)
+            {
+                return RedisAPI.JString.remove(jedis, pKey);
+            }
+        }
+        
+        // Key + Fields 
+        // String might be faster in some cases 
+        public static class JHashes
+        {
+            public static long set(Jedis jedis, String psKey, String pFieldName, String pFieldVal)
+            {
+                return RedisAPI.JHashes.set(jedis, psKey, pFieldName, pFieldVal);
+            }
+
+            public static long set(Jedis jedis, String psKey, String pFieldName, String pFieldVal, int piExpirySeconds)
+            {
+                return RedisAPI.JHashes.set(jedis, psKey, pFieldName, pFieldVal, piExpirySeconds);
+            }
+
+            public static String getField(Jedis jedis, String psKey, String pFieldName)
+            {
+                return RedisAPI.JHashes.getField(jedis, psKey, pFieldName);
+            }
+
+            public static long remove(Jedis jedis, String pKey)
+            {
+                return RedisAPI.JHashes.remove(jedis, pKey);
+            }
+        }
+        
+        //Queues 
+        public static class JLists
+        {
+            public static long push(Jedis jedis, String pListKey, String pListEl, boolean pbFromTop)
+            {
+                return RedisAPI.JLists.push(jedis, pListKey, pListEl, pbFromTop);
+            }
+            
+            public static String pop(Jedis jedis, String pListKey, boolean pbFromTop)
+            {
+                return RedisAPI.JLists.pop(jedis, pListKey, pbFromTop);
+            }
+            
+            public static long size(Jedis jedis, String pListKey)
+            {
+                return RedisAPI.JLists.size(jedis, pListKey);
+            }
         }
     }
     
@@ -906,12 +1038,35 @@ public final class Util
         }
 
     }
-    
+
     //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     //                          SubClass DateTime
     //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     public static class DateTime
     {
+        // pDateType = d - day, M - month, s - seconds, h - hours, m - minutes
+        public static int convert2Seconds(String pDateType, int pLength)
+        {
+            if (pDateType.trim().equals("d")==true)//day
+            {
+                return pLength * 24 * 60 * 60;
+            }
+            else if (pDateType.trim().equals("h")==true)//minute
+            {
+                return pLength * 60 * 60;
+            }
+            else if (pDateType.trim().equals("m")==true)//minute
+            {
+                return pLength * 60;
+            }
+            else if (pDateType.trim().equals("s")==true)//seconds
+            {
+                return pLength;
+            }
+            
+            return -1;
+        }
+
         public static Long GetDateTime_l_wo_MSeconds()
         {
             SimpleDateFormat    DFormat = new SimpleDateFormat("YYYYMMddHHmmss");
@@ -981,7 +1136,7 @@ public final class Util
 
             return  sDateNow;
         }
-        
+
         public static Date Str2Date(String psDate)
         {
             try
@@ -1585,6 +1740,27 @@ public final class Util
             {
                 return false;
             }
+        }
+        
+        public static String ReadAllFile(String psFilePath) throws Exception
+        {
+            String sContent = "";
+            
+            String sLine = "";
+
+            FileReader inFile = new  FileReader(psFilePath);
+            BufferedReader inStream = new BufferedReader(inFile);
+
+            while ((sLine = inStream.readLine()) != null) 
+            {
+                /** 
+                  Your implementation  
+                **/
+                sContent += sLine;
+            }
+            inStream.close();
+            
+            return sContent;
         }
         
         public static boolean isDirExist(String pDirPath)
@@ -2340,6 +2516,26 @@ public final class Util
     {
         public static class rsa
         {
+            public static void addSessionKey(ssoSessionKeys poKeys)
+            {
+                RSAMisc.addSessionKey(poKeys);
+            }
+            
+            public static int getNoOfKey(int pKeyLen)
+            {
+                return RSAMisc.getNoOfKey(pKeyLen);
+            }
+            
+            public static ssoSessionKeys pickKey(int pKeyLen)
+            {
+                return RSAMisc.pickKey(pKeyLen);
+            }
+            
+            public static ssoSessionKeys getKey(String psKeyIndex)
+            {
+                return RSAMisc.getKey(psKeyIndex);
+            }
+            
             public static ssoRSAKeyPair generateRSAKeyPair(int pLen)
             {
                 ssoRSAKeyPair newKeyPair = new ssoRSAKeyPair();

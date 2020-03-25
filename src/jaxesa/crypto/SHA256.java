@@ -23,7 +23,8 @@ public final class SHA256
             //String text = "esabil";
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] hash = digest.digest(psData.getBytes(StandardCharsets.UTF_8));
-            String sRes = Hex.encodeHexString( hash ).toUpperCase();
+            String sRes = Hex.encodeHexString( hash ).toLowerCase();
+            //String sRes = Hex.encodeHexString( hash ).toUpperCase();
             /*String sRes  = DatatypeConverter.printHexBinary(hash);*/
             
             return sRes;

@@ -5,17 +5,22 @@
  */
 package jaxesa.webapi;
 
+import java.util.ArrayList;
+
 /**
  *
  * @author Administrator
  */
-public class sso_APIResponse
+public class ssoAPIResponse
 {
     public String Id;
     public String Response;
     public String ResponseMsg;//optional
     public String Content;
     public String ClientSessionId;
+    //public String ut; //token user state (token)
+    
+    public ArrayList<ssoCookie> cookies = new ArrayList<ssoCookie>();
 }
 
 

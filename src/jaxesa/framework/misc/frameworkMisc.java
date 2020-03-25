@@ -30,14 +30,17 @@ public final class frameworkMisc
     {
         for (String paramN:paCookies)
         {
-            String[] parts = paramN.split("=");
-            
-            if (parts[0].trim().equals(pName)==true)
+            if (paramN!=null)
             {
-                if (parts.length==1)
-                    return "";
-                
-                return parts[1];
+                String[] parts = paramN.split("=");
+
+                if (parts[0].trim().equals(pName)==true)
+                {
+                    if (parts.length==1)
+                        return "";
+
+                    return parts[1];
+                }
             }
         }
 
