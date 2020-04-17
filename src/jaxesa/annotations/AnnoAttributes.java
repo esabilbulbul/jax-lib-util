@@ -56,7 +56,7 @@ public class AnnoAttributes
     public MediaType                Consumes;
     public MethodTypes              MethodType;
     public VerificationType         TokenVerification;
-    public boolean                  Login;
+    public boolean                  isLoginMethod;
     public String                   ClassPath;
     public String                   MethodPrototype;  //ClassPath @Path + Method Path @Path + Parameters 
     public String                   MethodPath;       //Method Path @Path

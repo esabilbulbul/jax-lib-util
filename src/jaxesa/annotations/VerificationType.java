@@ -14,6 +14,6 @@ public enum VerificationType
 {
     NONE,           //Will do nothing related to Token
     MUST,           //Will force to verify token
-    GENERATEONLY    //Will generate token at each call without verifying the recieved token
+    GENERATEONLY    //Will generate token at each call without need to pass the verification of the recieved token
 }
 

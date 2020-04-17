@@ -11,7 +11,9 @@ package jaxesa.defs;
  */
 public final class ShipShuk
 {
-    public static String ACTIVATION_TOKEN_KEY_PREFIX   = "actv-tk-";
+    public static String SESSION_TOKEN_KEY_PREFIX = "ssn-tk-";
+            
+    public static String ACTIVATION_TOKEN_KEY_PREFIX   = "actv-tk-";//if you change this REMEMBER to change JSP page as well 
 
     // to list all the items queued up 
     // on redis client
