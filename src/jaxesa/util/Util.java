@@ -86,6 +86,7 @@ import jaxesa.framework.misc.HTTPReqParameter;
 import jaxesa.framework.misc.frameworkMisc;
 import jaxesa.redis.RedisAPI;
 import redis.clients.jedis.Jedis;
+import org.joda.time.DateTime;
 /**
  *
  * @author Administrator
@@ -248,14 +249,34 @@ public final class Util
         //Queues 
         public static class JLists
         {
+            //pListKey = Queue Name
+            //pbFromTop = default TRUE
             public static long push(Jedis jedis, String pListKey, String pListEl, boolean pbFromTop)
             {
                 return RedisAPI.JLists.push(jedis, pListKey, pListEl, pbFromTop);
             }
             
+            //pListKey = Queue Name
+            //pbFromTop = default TRUE
+            public static long push(Jedis jedis, String pListKey, Object pListEl, boolean pbFromTop)
+            {
+                String sListEl = Util.JSON.Convert2JSON(pListEl).toString();
+                
+                return RedisAPI.JLists.push(jedis, pListKey, sListEl, pbFromTop);
+            }
+
+            //pListKey = Queue Name
+            //pbFromTop = default FALSE
             public static String pop(Jedis jedis, String pListKey, boolean pbFromTop)
             {
                 return RedisAPI.JLists.pop(jedis, pListKey, pbFromTop);
+            }
+            
+            public static <T extends Object> T pop(Jedis jedis, String pListKey, Class<T> pClass, boolean pbFromTop)
+            {
+                String sElVal = RedisAPI.JLists.pop(jedis, pListKey, pbFromTop);
+                
+                return (T)Util.JSON.Convert2Obj(sElVal, pClass);
             }
             
             public static long size(Jedis jedis, String pListKey)
@@ -1044,6 +1065,51 @@ public final class Util
     //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     public static class DateTime
     {
+        //jar file needed under global/datetime
+        public static String subtractDays(Date pDate, int pDayLen, String pFormat)
+        {
+            String sFormat = "yyyyMMdd";//default
+            if (pFormat.trim().length()>0)
+                pFormat = sFormat;
+
+            //Date date = new Date(); // Or where ever you get it from
+            Date daysAgo = new org.joda.time.DateTime(pDate).minusDays(pDayLen).toDate();
+            DateFormat dateFormat = new SimpleDateFormat(sFormat);
+            String strDate = dateFormat.format(daysAgo);
+
+            return strDate;
+        }
+        
+        //pDate = yyyyMMddHHmmssS
+        public static int getDayOfYear(String pDate)
+        {
+            Date dtInput = new Date();
+            dtInput = Str2Date(pDate);
+            
+            org.joda.time.DateTime dtFinal = new org.joda.time.DateTime(dtInput);
+            
+            return dtFinal.getDayOfYear();
+        }
+        
+        public static int getDifferenceInDays(String pDate1, String pDate2)
+        {
+            Date dtInput1 = new Date();
+            dtInput1 = Str2Date(pDate1);
+            org.joda.time.DateTime dtDate1 = new org.joda.time.DateTime(dtInput1);
+
+            Date dtInput2 = new Date();
+            dtInput2 = Str2Date(pDate2);
+            org.joda.time.DateTime dtDate2 = new org.joda.time.DateTime(dtInput2);
+            
+            int year1 = dtDate1.getYear();
+            int year2 = dtDate2.getYear();
+            
+            int day1 = dtDate1.getDayOfYear();
+            int day2 = dtDate2.getDayOfYear();
+
+            return ((year2 - year1) * 365) + (day2 - day1);
+        }
+        
         // pDateType = d - day, M - month, s - seconds, h - hours, m - minutes
         public static int convert2Seconds(String pDateType, int pLength)
         {
@@ -1125,6 +1191,18 @@ public final class Util
 
             return  lDateNow;
         }
+        
+        // Forexample; pFormat = YYYYMMdd
+        public static Long GetDateTime_l(String pFormat)
+        {
+            SimpleDateFormat    DFormat = new SimpleDateFormat(pFormat);
+
+            Date    DateNow             = new Date();
+            String  sDateNow            = DFormat.format(DateNow);
+            Long    lDateNow            = Long.parseLong(sDateNow);
+
+            return  lDateNow;
+        }
 
         public static String GetDateTime_s()
         {
@@ -1137,11 +1215,37 @@ public final class Util
             return  sDateNow;
         }
 
+        public static String Date2Str(Date pDate, String pFormat)
+        {
+            //Date date = Calendar.getInstance().getTime();
+            DateFormat dateFormat = new SimpleDateFormat(pFormat);
+
+            return dateFormat.format(pDate);
+        }
+
         public static Date Str2Date(String psDate)
         {
             try
             {
+                String sDate = "";
+                if (psDate.length()<=8)
+                {
+                    sDate = Util.Str.rightPad(psDate, "0", 15);
+                }
                 SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmssS");
+                return formatter.parse(sDate);
+            }
+            catch(Exception e)
+            {
+                return null;
+            }
+        }
+        
+        public static Date Str2Date(String psDate, String pFormat)
+        {
+            try
+            {
+                SimpleDateFormat formatter = new SimpleDateFormat(pFormat);
                 return formatter.parse(psDate);
             }
             catch(Exception e)

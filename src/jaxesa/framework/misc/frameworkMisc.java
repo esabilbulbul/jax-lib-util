@@ -13,6 +13,9 @@ import java.util.ArrayList;
  */
 public final class frameworkMisc 
 {
+    public static String DEFAULT_LOGIN_RENEWAL_TYPE   = "d";//"d";//DAY / SECONDS (for now)
+    public static int    DEFAULT_LOGIN_RENEWAL_LENGTH = 7;//DAY
+
     public static String getParameterValue(String pName, ArrayList<HTTPReqParameter> paParams)
     {
         for (HTTPReqParameter paramN:paParams)

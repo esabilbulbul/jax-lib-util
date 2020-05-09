@@ -34,7 +34,7 @@ public class DefaultColumns
     @Status
     @Basic(optional = false)
     @Column(name = "STAT", nullable = false)
-    public int stat;
+    public int stat = 1;//default
     
     @InsertDate
     @Basic(optional = false)
