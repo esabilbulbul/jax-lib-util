@@ -293,9 +293,56 @@ public final class Util
             return frameworkMisc.getParameterValue(pName, paParams);
         }
     }
-    
+
     public static class Sys
     {
+        //This executes terminal command
+        // For example (clamscan + parameter (....txt file)
+        // CommandLine = "clamscan /Users/esabil/Documents/files/kasa2020_1.txt"
+        public static RunTimeOutputs executeCommand(String pCommandLine)
+        {
+            RunTimeOutputs rtos = new RunTimeOutputs();
+            try
+            {
+                Runtime rt = Runtime.getRuntime();
+                rtos.proc = rt.exec(pCommandLine);
+
+                InputStream stderr = rtos.proc.getErrorStream();
+                InputStreamReader isr = new InputStreamReader(stderr);
+
+                InputStream stdin = rtos.proc.getInputStream();
+                InputStreamReader iso = new InputStreamReader(stdin);
+
+                rtos.err = new BufferedReader(isr);
+                rtos.out = new BufferedReader(iso);
+                
+                return rtos;
+            }
+            catch(Exception e)
+            {
+                return null;
+            }
+        }
+
+        public static String getOSName()
+        {
+            return System.getProperty("os.name");
+        }
+
+        public static boolean isOSMacOS()
+        {
+            String sOSName = getOSName();
+
+            sOSName = sOSName.toLowerCase();
+
+            int index = sOSName.indexOf("mac os");
+
+            if (index>=0)
+                return true;
+
+            return false;
+        }
+        
         public static long generateSysId(int pPaddingExponent)
         {
             int iExp = (int)Math.pow(10, pPaddingExponent);//for javascript MAX must be 10 otherwise js rounds erronously
@@ -1153,7 +1200,8 @@ public final class Util
 
             Date    DateNow             = new Date();
             String  sDateNow            = DFormat.format(DateNow);
-            Long    lDateNow            = Long.parseLong(sDateNow);
+
+            Long    lDateNow            = Long.parseLong(sDateNow.substring(0, pFormat.length()));
 
             return  lDateNow;
         }
@@ -1223,6 +1271,24 @@ public final class Util
             return dateFormat.format(pDate);
         }
 
+        public static boolean isFormatCorrect(String psDate, String psFormat)
+        {
+            try
+            {
+                Date dt = Str2Date(psDate, psFormat);
+                
+                if (dt==null)
+                    return false;
+                else
+                    return true;
+            }
+            catch(Exception e)
+            {
+                return false;
+            }
+            
+        }
+        
         public static Date Str2Date(String psDate)
         {
             try
@@ -1246,6 +1312,8 @@ public final class Util
             try
             {
                 SimpleDateFormat formatter = new SimpleDateFormat(pFormat);
+                formatter.setLenient(false);
+
                 return formatter.parse(psDate);
             }
             catch(Exception e)

@@ -19,7 +19,10 @@ public final class ShipShuk
     // on redis client
     // lrange <listname> <startindex> <stopindex>
     // lrange <listname> 0 10
+    // QUEUES-NAMES
     public static String SIGNUP_QUEUE_NEW_REQUEST = "signup#requests";
+    
+    public static String SIGNUP_QUEUE_NEW_MESSAGE = "signup#messages";
 }
 
 

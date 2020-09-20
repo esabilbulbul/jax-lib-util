@@ -3,15 +3,18 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package jaxesa.webapi;
+package jaxesa.util;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 
 /**
  *
  * @author esabil
  */
-public class ssoLoginResponse 
+public class RunTimeOutputs 
 {
-    public boolean bSucceded = false;
-    public String  UserId = "";
-    public String  AccId = "";// user can have multiple accounts
+    public BufferedReader err;
+    public BufferedReader out;
+    public Process proc;
 }

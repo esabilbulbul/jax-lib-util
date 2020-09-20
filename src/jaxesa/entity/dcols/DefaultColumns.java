@@ -18,6 +18,7 @@ import jaxesa.persistence.annotations.Status;
 import jaxesa.persistence.annotations.SysGMT;
 import jaxesa.persistence.annotations.Version;
 import jaxesa.persistence.annotations.RefId;
+import jaxesa.persistence.annotations.ServerId;
 
 /**
  *
@@ -31,6 +32,11 @@ public class DefaultColumns
     @Column(name = "UID", nullable = false)
     public Long uid;
     
+    @ServerId
+    @Basic(optional = false)
+    @Column(name = "SERVER_ID", nullable = false)
+    public int serverId;
+
     @Status
     @Basic(optional = false)
     @Column(name = "STAT", nullable = false)
@@ -56,7 +62,7 @@ public class DefaultColumns
     
     @ByUser
     @Column(name = "BYUSER", length = 20)
-    public String byuser;
+    public String byuser  = "";
     
     @Column(name = "CLIENT_IP", length = 15)
     public String clientIp;
