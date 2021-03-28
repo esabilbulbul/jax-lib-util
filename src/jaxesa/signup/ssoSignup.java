@@ -29,4 +29,8 @@ public class ssoSignup
     public String SysDateTime = "";
     public ssoSignupToken Token = new ssoSignupToken();//this will be calculated the process token generated (step 1. receive req, step 2. gen token and send email 3. activate)
 
+    public String site = "";//SS = ShipShuk.com BZ: Shipshuk.biz
+    public String mode = "";//EM = Email FB = Facebook GO = Google
+
 }
+

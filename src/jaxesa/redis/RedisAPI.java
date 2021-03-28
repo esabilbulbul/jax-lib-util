@@ -19,23 +19,30 @@ import redis.clients.jedis.JedisPoolConfig;
  */
 public final class RedisAPI
 {
+    static String gHost = "";
+    static int    gPort = 0;
+    static int    gConnNumber = 0;
+    
     static JedisPool gJedisPool = new JedisPool();
 
     public static String connect(String psHost, int piPort, int pMaxConNumber)
     {
+        gHost = psHost;
+        gPort = piPort;
+        gConnNumber = pMaxConNumber;
+
+        boolean bInit = false;
+        
         try
         {
+            if (gPort==0)
+                bInit = true;
+            
             final JedisPoolConfig poolConfig = buildPoolConfig(pMaxConNumber);
             gJedisPool = new JedisPool(poolConfig, psHost, piPort);
             Jedis jedis = getConnection();
 
             jedis.ping();
-            /*
-            gJedisPool = new JedisPool(psHost, piPort);
-
-            Jedis jCon = gJedisPool.getResource();
-            jCon.ping();
-            */
 
             return "";
         }
@@ -44,14 +51,14 @@ public final class RedisAPI
             return e.getMessage();
         }
     }
-    
-    static private JedisPoolConfig buildPoolConfig(int pMaxConNumber) 
+
+    static private JedisPoolConfig buildPoolConfig(int pMaxConNumber)
     {
         int iMaxConNumber = pMaxConNumber;
         int iMinIdleNum   = pMaxConNumber / 8;
-        
+
         final JedisPoolConfig poolConfig = new JedisPoolConfig();
-        
+
         poolConfig.setMaxTotal(iMaxConNumber);//128);
         poolConfig.setMaxIdle(iMaxConNumber);//128);
         poolConfig.setMinIdle(iMinIdleNum);//16);
@@ -62,6 +69,7 @@ public final class RedisAPI
         poolConfig.setTimeBetweenEvictionRunsMillis(Duration.ofSeconds(30).toMillis());
         poolConfig.setNumTestsPerEvictionRun(3);
         poolConfig.setBlockWhenExhausted(true);
+
         return poolConfig;
     }
 
@@ -73,7 +81,28 @@ public final class RedisAPI
         }
         catch(Exception e)
         {
+            reconnect();
+            
             return null;
+        }
+    }
+
+    public static boolean reconnect()
+    {
+        try
+        {
+            final JedisPoolConfig poolConfig = buildPoolConfig(gConnNumber);
+            gJedisPool = new JedisPool(poolConfig, gHost, gPort);
+
+            // WARNING : THIS MUST BE CLOSED OFF OTHERWISE CREATES INIFITE LOOP 
+            //Jedis jedis = getConnection();
+            //jedis.ping();
+
+            return true;
+        }
+        catch(Exception e)
+        {
+            return false;
         }
     }
 
@@ -115,10 +144,11 @@ public final class RedisAPI
         {
             return jedis.get(pKey);
         }
-        
-        public static long remove(Jedis jedis, String pKey)
+
+        public static long remove(Jedis jedis, String... pKeys)
         {
-            return jedis.del(pKey);
+            return jedis.del(pKeys);
+            //return jedis.del(pKey);
         }
     }
 
@@ -149,9 +179,9 @@ public final class RedisAPI
             return jedis.hget(psKey, pFieldName);
         }
 
-        public static long remove(Jedis jedis, String pKey)
+        public static long remove(Jedis jedis, String... pKeys)
         {
-            return jedis.del(pKey);
+            return jedis.del(pKeys);
         }
     }
 

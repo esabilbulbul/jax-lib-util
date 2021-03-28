@@ -20,6 +20,9 @@ import org.apache.activemq.ActiveMQConnectionFactory;
 /**
  *
  * @author Administrator
+ * 
+ * ACTIVE MQ 
+ * 
  */
 public class MQ implements ExceptionListener
 {

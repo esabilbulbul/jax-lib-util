@@ -5,6 +5,12 @@
  */
 package jaxesa.util;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.reflect.TypeToken;
 import com.mysql.jdbc.StringUtils;
 import com.mysql.jdbc.jdbc2.optional.MysqlDataSource;
 import java.text.SimpleDateFormat;
@@ -16,11 +22,18 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.io.*;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.PrivateKey;
@@ -80,11 +93,14 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 import java.util.zip.Checksum;
 import java.util.zip.CRC32;
+import jaxesa.annotations.AnnoAttributes;
 import jaxesa.crypto.RSAMisc;
 import jaxesa.crypto.ssoSessionKeys;
 import jaxesa.framework.misc.HTTPReqParameter;
 import jaxesa.framework.misc.frameworkMisc;
 import jaxesa.redis.RedisAPI;
+import jaxesa.api.callback.ssoCallbackParam;
+import jaxesa.persistence.cache.Caching;
 import redis.clients.jedis.Jedis;
 import org.joda.time.DateTime;
 /**
@@ -137,6 +153,123 @@ public final class Util
             return SObj;
         }
     }
+
+    public static class Process
+    {
+        //poThreadManager class MUST implements Runnable
+        public static void createThread(Runnable poThreadManager)
+        {
+            Thread thread = new Thread(poThreadManager);
+
+            thread.start();
+        }
+    }
+
+    public static class runtime
+    {
+        public static Method prepareMethod(String pClassName, String pMethodName, ArrayList<Class<?>> paParamTypes)
+        {
+            try
+            {
+                Method myMethod;
+                Class<?> cls;
+
+                Class<?> params[] = new Class[paParamTypes.size()];
+                Integer  Index    = 0;
+
+                //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                //              Prepare the parameters to method
+                //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                for (Class<?> prmType:paParamTypes)
+                {
+                    params[Index] = prmType;
+
+                    // you can do additional checks for other data types if you want.
+                    Index++;
+                }
+
+                cls = Class.forName(pClassName);
+                myMethod     = cls.getDeclaredMethod(pMethodName, params);//prototype
+
+                return myMethod;
+                
+            }
+            catch(Exception e)
+            {
+                return null;
+            }
+        }
+        
+        //method is prepared ready
+        public static Object executeMethod(String pClassName, Method pMethod, ArrayList<Object> paParamVals)
+        {
+            try
+            {
+                Object _instance;
+
+                _instance = Util.misc.getInstance(pClassName);
+
+                Integer index = 0;
+                Object[] OParVals = new Object[paParamVals.size()];
+                for(Object ALPar:paParamVals)
+                {
+                    OParVals[index]=ALPar;
+                    index++;
+                }
+
+                Object ReturnVal = pMethod.invoke(_instance, OParVals);
+
+                return ReturnVal;
+            }
+            catch(Exception e)
+            {
+                return null;
+            }
+        }
+
+        public static Object executeMethod( String pClassName, 
+                                            String pMethodName, 
+                                            ArrayList<Class<?>> paParamTypes,
+                                            ArrayList<Object> paParamVals)
+        {
+            try
+            {
+                Class<?> cls;
+                Object _instance;
+                Method myMethod;
+
+                myMethod = prepareMethod(pClassName, pMethodName, paParamTypes);
+
+                if (myMethod!=null)
+                {
+                    cls = Class.forName(pClassName);
+
+                    Integer index = 0;
+                    Object[] OParVals = new Object[paParamVals.size()];
+                    for(Object ALPar:paParamVals)
+                    {
+                        OParVals[index]=ALPar;
+                        index++;
+                    }
+
+                    _instance    = Util.misc.getInstance(pClassName);
+
+                    Object ReturnVal = myMethod.invoke(_instance, OParVals);
+
+                    return ReturnVal;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            catch(Exception e)
+            {
+                return null;
+            }
+        }
+
+    }
     
     //Memory DB
     public static class Redis
@@ -149,7 +282,8 @@ public final class Util
         
         public static void releaseConnection(Jedis pJedis)
         {
-            pJedis.close();
+            if (pJedis!=null)
+                pJedis.close();
         }
 
         public static String connect(String psHost, int piPort, int pMaxConNumber)
@@ -167,7 +301,6 @@ public final class Util
             public static long decrease(Jedis jedis, String pKey, int pBy)
             {
                 return RedisAPI.JNumber.decrease(jedis, pKey, pBy);
-
             }
 
         }
@@ -192,8 +325,14 @@ public final class Util
             public static <T extends Object> T get(Jedis jedis, String pKey, Class<T> pClass)
             {
                 String sObj = RedisAPI.JString.get(jedis, pKey);
-
-                return (T)Util.JSON.Convert2Obj(sObj, pClass);
+                
+                if(sObj==null)
+                    return null;
+                
+                Object retObj = Util.JSON.Convert2Obj(sObj, pClass);
+                
+                return pClass.cast(retObj);
+                //return (T)Util.JSON.Convert2Obj(sObj, pClass);//deprecated
             }
 
         }
@@ -215,9 +354,9 @@ public final class Util
                 return RedisAPI.JString.get(jedis, pKey);
             }
 
-            public static long remove(Jedis jedis, String pKey)
+            public static long remove(Jedis jedis, String... pKeys)
             {
-                return RedisAPI.JString.remove(jedis, pKey);
+                return RedisAPI.JString.remove(jedis, pKeys);
             }
         }
         
@@ -240,13 +379,13 @@ public final class Util
                 return RedisAPI.JHashes.getField(jedis, psKey, pFieldName);
             }
 
-            public static long remove(Jedis jedis, String pKey)
+            public static long remove(Jedis jedis, String... pKeys)
             {
-                return RedisAPI.JHashes.remove(jedis, pKey);
+                return RedisAPI.JHashes.remove(jedis, pKeys);
             }
         }
         
-        //Queues 
+        //Queues
         public static class JLists
         {
             //pListKey = Queue Name
@@ -276,7 +415,11 @@ public final class Util
             {
                 String sElVal = RedisAPI.JLists.pop(jedis, pListKey, pbFromTop);
                 
-                return (T)Util.JSON.Convert2Obj(sElVal, pClass);
+                Object retObj = Util.JSON.Convert2Obj(sElVal, pClass);
+                
+                return pClass.cast(retObj);
+
+                //return (T)Util.JSON.Convert2Obj(sElVal, pClass);//depreciated
             }
             
             public static long size(Jedis jedis, String pListKey)
@@ -1228,7 +1371,7 @@ public final class Util
 
             return  lDateNow;
         }
-        
+
         public static Long GetDateTime_l()
         {
             SimpleDateFormat    DFormat = new SimpleDateFormat("YYYYMMddHHmmssS");
@@ -1239,7 +1382,7 @@ public final class Util
 
             return  lDateNow;
         }
-        
+
         // Forexample; pFormat = YYYYMMdd
         public static Long GetDateTime_l(String pFormat)
         {
@@ -1252,8 +1395,21 @@ public final class Util
             return  lDateNow;
         }
 
+        public static String GetDateTime_s(String psFormat)
+        {
+            SimpleDateFormat    DFormat = new SimpleDateFormat(psFormat);
+
+            Date    DateNow             = new Date();
+            String  sDateNow            = DFormat.format(DateNow);
+            //Long    lDateNow            = Long.parseLong(sDateNow);
+
+            return  sDateNow;
+        }
+        
         public static String GetDateTime_s()
         {
+            return GetDateTime_s("YYYYMMddHHmmssS");
+            /*
             SimpleDateFormat    DFormat = new SimpleDateFormat("YYYYMMddHHmmssS");
 
             Date    DateNow             = new Date();
@@ -1261,6 +1417,7 @@ public final class Util
             Long    lDateNow            = Long.parseLong(sDateNow);
 
             return  sDateNow;
+            */
         }
 
         public static String Date2Str(Date pDate, String pFormat)
@@ -1451,7 +1608,7 @@ public final class Util
             sStr1 = sStr1.replaceAll("&", "%26");
             return sStr1;//
         }
-        
+
         public static int getURLSize(String psURL)
         {
             try
@@ -1459,11 +1616,11 @@ public final class Util
                 URL url = new URL(psURL);
 
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-                
+
                 int iContentSize = connection.getContentLength();
-                
+
                 connection.getInputStream().close();;
-                
+
                 return iContentSize;
             }
             catch(Exception e)
@@ -1476,65 +1633,89 @@ public final class Util
         {
             try
             {
-                //URL url = new URL("https://test.payeco.com:9443/DnaOnline/servlet/DnaPayB2C");
-                URL url = new URL(pURL);
+                //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                //
+                // WARNING: The following code has replaced the code commented its below
+                // 
+                //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-                // instantiate the HttpURLConnection with the URL object - A new
-                // connection is opened every time by calling the openConnection
-                // method of the protocol handler for this URL.
-                // 1. This is the point where the connection is opened.
-                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-
-                // set connection output to true
-                connection.setDoOutput(true);
-
-                // instead of a GET, we're going to send using method="POST"
                 if (pMethod.toUpperCase().equals("GET")==true)
-                    connection.setRequestMethod("GET");
-                else
-                    connection.setRequestMethod("POST");
-
-                //String sMSG = "request_text=" + pMsg;
-                //String sMSG = pParameterName + "=" + pParameterVal;
-                String sMSG = pMsg;
-
-                connection.setRequestProperty("Content-Length", "" + Integer.toString(sMSG.getBytes().length));
-                //connection.setRequestProperty("Content-Language", "en-US");  
-                //connection.setRequestProperty("Content-Language", "zh");            
-                //connection.setRequestProperty("content-type", "text/plain; charset=utf-8");
-                connection.setRequestProperty("Accept-Charset", "UTF-8");
-                connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.155 Safari/537.36");
-                // instantiate OutputStreamWriter using the output stream, returned
-                // from getOutputStream, that writes to this connection.
-                // 2. This is the point where you'll know if the connection was
-                // successfully established. If an I/O error occurs while creating
-                // the output stream, you'll see an IOException.
-                OutputStreamWriter writer = new OutputStreamWriter(connection.getOutputStream());
-                
-                if (sMSG.trim().length()>0)
-                    writer.write(sMSG);
-
-                // Closes this output stream and releases any system resources
-                // associated with this stream. At this point, we've sent all the
-                // data. Only the outputStream is closed at this point, not the
-                // actual connection
-                writer.close();
-                // if there is a response code AND that response code is 200 OK, do
-                // stuff in the first if block
-                int RespCode = connection.getResponseCode(); // == HttpURLConnection.HTTP_OK)        
-
-                BufferedReader in = new BufferedReader(
-                new InputStreamReader(connection.getInputStream()));
-                String inputLine;
-                StringBuffer response = new StringBuffer();
-
-                while ((inputLine = in.readLine()) != null) 
                 {
-                    response.append(inputLine);
+                    HttpClient client = HttpClient.newHttpClient();
+                    HttpRequest request = HttpRequest.newBuilder()
+                            .uri(URI.create(pURL))
+                            .build();
+
+                    HttpResponse<String> response = client.send(request,
+                            HttpResponse.BodyHandlers.ofString());
+
+                    //System.out.println(response.body());
+                    return response.body();
+
                 }
-                in.close();
-                
-                return response.toString();
+                else//post : check recaptcha uses this following flow 
+                {
+                    
+                    //URL url = new URL("https://test.payeco.com:9443/DnaOnline/servlet/DnaPayB2C");
+                    URL url = new URL(pURL);
+
+                    // instantiate the HttpURLConnection with the URL object - A new
+                    // connection is opened every time by calling the openConnection
+                    // method of the protocol handler for this URL.
+                    // 1. This is the point where the connection is opened.
+                    HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+
+                    // set connection output to true
+                    connection.setDoOutput(true);
+
+                    // instead of a GET, we're going to send using method="POST"
+                    if (pMethod.toUpperCase().equals("GET")==true)
+                        connection.setRequestMethod("GET");
+                    else
+                        connection.setRequestMethod("POST");
+
+                    //String sMSG = "request_text=" + pMsg;
+                    //String sMSG = pParameterName + "=" + pParameterVal;
+                    String sMSG = pMsg;
+
+                    connection.setRequestProperty("Content-Length", "" + Integer.toString(sMSG.getBytes().length));
+                    //connection.setRequestProperty("Content-Language", "en-US");  
+                    //connection.setRequestProperty("Content-Language", "zh");            
+                    //connection.setRequestProperty("content-type", "text/plain; charset=utf-8");
+                    connection.setRequestProperty("Accept-Charset", "UTF-8");
+                    connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.155 Safari/537.36");
+                    // instantiate OutputStreamWriter using the output stream, returned
+                    // from getOutputStream, that writes to this connection.
+                    // 2. This is the point where you'll know if the connection was
+                    // successfully established. If an I/O error occurs while creating
+                    // the output stream, you'll see an IOException.
+                    OutputStreamWriter writer = new OutputStreamWriter(connection.getOutputStream());
+
+                    if (sMSG.trim().length()>0)
+                        writer.write(sMSG);
+
+                    // Closes this output stream and releases any system resources
+                    // associated with this stream. At this point, we've sent all the
+                    // data. Only the outputStream is closed at this point, not the
+                    // actual connection
+                    writer.close();
+                    // if there is a response code AND that response code is 200 OK, do
+                    // stuff in the first if block
+                    int RespCode = connection.getResponseCode(); // == HttpURLConnection.HTTP_OK)        
+
+                    BufferedReader in = new BufferedReader(
+                    new InputStreamReader(connection.getInputStream()));
+                    String inputLine;
+                    StringBuffer response = new StringBuffer();
+
+                    while ((inputLine = in.readLine()) != null) 
+                    {
+                        response.append(inputLine);
+                    }
+                    in.close();
+
+                    return response.toString();
+                }
             }
 
             catch(Exception e)
@@ -1578,9 +1759,43 @@ public final class Util
                 return null;
             }
         }
-        
 
     }
+
+    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    //
+    //                          Callback 
+    //
+    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    public static class Callback
+    {
+        public static Object getParamValue(ArrayList<ssoCallbackParam> paParams, String pName)
+        {
+            try
+           {
+                int iLen = paParams.size();
+
+                for (int i=0; i<iLen; i++)
+                {
+                    ssoCallbackParam prm = new ssoCallbackParam();
+                    prm = paParams.get(i);
+                    if (prm.name.toLowerCase().equals(pName)==true)
+                    {
+                        return prm.val;
+                    }
+                }
+
+                return null;
+            }
+            catch(Exception e)
+            {
+                String msg = e.getMessage();
+                
+                return null;
+            }
+        }
+    }
+    
     
     //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     //
@@ -1682,11 +1897,130 @@ public final class Util
         {
             return pjRoot.next();
         }
-        
-        public static StringWriter Convert2JSON(Object pObj)
+
+        public static JsonObject toJsonObject(String psStr)
         {
             try
-            {            
+            {
+                JsonParser parser = new JsonParser();
+                return parser.parse(psStr).getAsJsonObject();
+                //return new JsonObject(psStr);
+            }
+            catch(Exception e)
+            {
+                return new JsonObject();
+            }
+        }
+        
+        public static Object toObject(String psStr, Class<?> pClass)
+        {
+            try
+            {
+                return Convert2Obj(psStr, pClass);
+                
+            }
+            catch(Exception e)
+            {
+                return null;
+            }
+        }
+        
+        public static Object toObjectWithJackson(String psStr, Class<?> pClass)
+        {
+            try
+            {
+                ObjectMapper mapper = new ObjectMapper();
+                Object obj = mapper.readValue(psStr, pClass);
+
+                return obj;
+            }
+            catch(Exception e)
+            {
+                return null;
+            }
+        }
+
+        public static String toString(Object pObj)
+        {
+            return Convert2JSON(pObj);
+        }
+
+        public static String toStringWithJackson(Object pObj)
+        {
+            try
+            {
+                StringWriter RetJSON = new StringWriter();
+                ObjectMapper mapper = new ObjectMapper();
+                mapper.enable(SerializationConfig.Feature.INDENT_OUTPUT);
+                mapper.writeValue(RetJSON, pObj);
+
+                return RetJSON.toString();
+            }
+            catch(Exception e)
+            {
+                return "";
+            }
+        }
+        
+        public static JsonArray toArray(String sJSONBuffer)
+        {
+            try
+            {
+                /*
+                JSONArray jsArray = new JSONArray(sJSONBuffer);
+                
+                return jsArray;
+                */
+                JsonParser jsonParser = new JsonParser();
+                JsonArray jsonArray = (JsonArray) jsonParser.parse(sJSONBuffer);
+                
+                return jsonArray;
+            }
+            catch(Exception e)
+            {
+                return null;
+            }
+        }
+
+        // This uses GSON 
+        public static boolean isExistInArray(JsonArray pJSArray, String pKey, String pVal)
+        {
+            try
+            {
+                for(int i=0;i<pJSArray.size();i++)
+                {
+                    JsonObject itm = (JsonObject)pJSArray.get(i);
+
+                    JsonElement keyVal = itm.get(pKey);
+                    
+                    if (keyVal!=null)
+                    {
+                        if(keyVal.toString().replace("\"", "").equals(pVal)==true)
+                            return true;
+                    }
+                    
+                }
+                
+                return false;
+            }
+            catch(Exception e)
+            {
+                return false;
+            }
+        }
+        
+        //public static StringWriter Convert2JSON(Object pObj)
+        public static String Convert2JSON(Object pObj)
+        {
+            try
+            {
+                Gson gs = new Gson();
+
+                String jsonString = new Gson().toJson(pObj);
+
+                return jsonString;
+                //return gs.toJson(pObj);
+                /*
                 StringWriter RetJSON = new StringWriter();
                 ObjectMapper mapper = new ObjectMapper();
                 mapper.enable(SerializationConfig.Feature.INDENT_OUTPUT);
@@ -1697,6 +2031,7 @@ public final class Util
                 //List<Object> myObjects = mapper.readValue("", new TypeReference<List<Object>>(){});
                         
                 return RetJSON;
+                */
             }
 
             catch(Exception e)
@@ -1710,10 +2045,17 @@ public final class Util
         {
             try
             {
+                Gson gs = new Gson();
+                
+                Object obj = gs.fromJson(psJSON, pClass);
+                
+                return obj;
+                /*
                 ObjectMapper mapper = new ObjectMapper();
                 Object obj = mapper.readValue(psJSON, pClass);
                 
                 return obj;
+                */
             }
             
             catch(Exception e)
@@ -1756,12 +2098,12 @@ public final class Util
                 return false;
             }
         }
-        
+
         public static boolean isJSONArray(String psJsonStream)
         {
             try
             {
-                new JSONArray(psJsonStream); 
+                new JSONArray(psJsonStream);
                 return true;
             }
             catch(Exception e)
@@ -1769,7 +2111,36 @@ public final class Util
                 return false;
             }
         }
-        
+
+        public static void parseJSONArray()
+        {
+            try
+            {
+                // IMPORTANT 
+                // For JSON Array parsing this function WON'T work
+                // This is just a placeholder 
+                // Use the following example to parse JSON Arrays
+                
+                // Example
+                //test[] jsoArr = gson.fromJson(sMultiArgs, test[].class);
+
+
+                
+                /*
+                Gson gson = new Gson();
+
+                Type ListType = new TypeToken<ArrayList<pClass>>(){}.getType();
+                return gson.fromJson(psJsonArray, ListType);
+                */
+                
+                //return JSOArray;
+            }
+            catch(Exception e)
+            {
+                return ;
+            }
+        }
+
         public static org.json.simple.JSONObject parseJSON(String pjsSource)
         {
             try
@@ -2793,5 +3164,73 @@ public final class Util
             }
         }
     }
+
+    public static class misc
+    {
+        public static Object getInstance(String pClassName)
+        {
+            try
+            {
+
+                Class<?> MyPackageClass = Class.forName(pClassName);//"webapi.USER");
+                Constructor<?> constructor = MyPackageClass.getDeclaredConstructor();
+                Object MyClassInstance = constructor.newInstance();
+
+                return MyClassInstance;
+            }
+            catch(Exception e)
+            {
+                String s = e.getCause().toString();
+                return null;
+            }
+
+        }
+        
+        public static Object ifNull(Object pVal, Object pFill)
+        {
+            if (pVal==null)
+                return pFill;
+            
+            return pVal;
+        }
+    }
+
+    public static class Facebook
+    {
+        // Facebook returns failed if the token is expired.
+        // In other words, if we received a positive response that means 
+        // the token still valid.
+        public static boolean authenticate(String pFBAccessToken, String pFBUserId)
+        {
+            try
+            {
+                String sURL = "https://graph.facebook.com/me?access_token=" + pFBAccessToken;
+                //String sURL = "https://graph.facebook.com/me?access_token=" + "123";
+
+                String sResp = Util.HTTP.sendHTTPRequest("GET", sURL, "");
+
+                //JSON Parse
+                // If valid the result should be as following
+                //{
+                //  "name": "Esabil Bulbul",
+                //  "id": "10157968733184541"
+                //}   
+
+                org.json.simple.JSONObject jsRsp = Util.JSON.parseJSON(sResp);
+                
+                String sUserId = (String)jsRsp.get("id");
+
+                if (sUserId.equals(pFBUserId)==true)
+                    return true;
+                
+                return false;
+            }
+            catch(Exception e)
+            {
+                return false;
+            }
+        }
+    }
+
 
 }

@@ -9,6 +9,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import jaxesa.definitions.LimitParams;
 
 /**
  *
@@ -22,5 +23,12 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE) 
 public @interface Cache 
 {
-    public boolean value() default true;
+    public boolean value() default true;//
+    public String SplitKeyColumn() default "";//if empty, cache all the rows. Otherwise, only cache the rows for the keyColumn that are matched. Only works with LAZY Load type.
+    public int maxRow() default LimitParams.MAX_CACHE_ROW_NUMBER;
+    public int maxDuration() default LimitParams.MAX_CACHE_DURATION;//1/2 day
+    public CacheLoadTypes type() default CacheLoadTypes.LAZY;//on_startup is not supported as of Dec 2020. The next releases will support 
+    public CacheLevels level() default CacheLevels.LEVEL_2;//default redis memdb will be used
 }
+
+

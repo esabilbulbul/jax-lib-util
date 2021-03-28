@@ -7,6 +7,7 @@ package memtree;
 
 import btree.BinaryTreeNode;
 import java.io.StringWriter;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -180,7 +181,10 @@ public class MemoryTree
         try
         {
             Class<?>    EntityClass  = Class.forName(pClass.getName());
-            Object      InstanceObj  = EntityClass.newInstance();
+            //Object      InstanceObj  = EntityClass.newInstance();//this one depreciated
+            Constructor<?> constructor = EntityClass.getConstructor();
+            Object InstanceObj = constructor.newInstance();
+
             String[]    sVals        = pVals.split(",");
             int         index        = 0;
             Field[]     Flds = null;

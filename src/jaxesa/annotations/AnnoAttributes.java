@@ -57,6 +57,7 @@ public class AnnoAttributes
     public MethodTypes              MethodType;
     public VerificationType         TokenVerification;
     public boolean                  isLoginMethod;
+    public boolean                  isLoginVia;
     public String                   ClassPath;
     public String                   MethodPrototype;  //ClassPath @Path + Method Path @Path + Parameters 
     public String                   MethodPath;       //Method Path @Path
@@ -64,6 +65,11 @@ public class AnnoAttributes
     public ArrayList<Parameter>     ServiceParameters;//Service parameters
     public MediaType                Produces; //Return Type
     public String                   Redirect_URL;
+    
+    public ThreadActionType         ThreadActType;
+    public String                   ThreadSource;
+    public String                   ThreadTargetClass;
+    public String                   ThreadTargetMethod;
     
     public AnnoAttributes()
     {
@@ -79,5 +85,10 @@ public class AnnoAttributes
         ClassPath           =   "";
         Produces            =   MediaType.PLAINTEXT;
         TokenVerification   =   VerificationType.NONE;
+        
+        ThreadActType       =   ThreadActionType.NONE;
+        ThreadSource        =   "";
+        ThreadTargetClass   =   "";
+        ThreadTargetMethod  =   "";
     }
 }

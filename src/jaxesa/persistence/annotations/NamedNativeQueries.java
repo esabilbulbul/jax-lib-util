@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package jaxesa.annotations;
+package jaxesa.persistence.annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -12,10 +12,11 @@ import java.lang.annotation.Target;
 
 /**
  *
- * @author esabil
+ * @author Administrator
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD) //on class level
-public @interface Login {
-    public boolean via() default false; //via Facebook / Google
+@Target(ElementType.TYPE) 
+public @interface NamedNativeQueries 
+{
+    public NamedQuery[] value();
 }

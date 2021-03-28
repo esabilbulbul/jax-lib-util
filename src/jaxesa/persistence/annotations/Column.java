@@ -22,7 +22,7 @@ public @interface Column
     public String  name() default "";
     public boolean nullable() default false;
     public int     length() default 0;
-    public boolean unique() default false;
+    public boolean unique() default false;//also used as Key / Index
     public int     precision() default 0;
     public int     scale()     default 0;
 }
