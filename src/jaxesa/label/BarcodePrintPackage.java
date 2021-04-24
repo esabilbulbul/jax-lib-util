@@ -1,7 +1,7 @@
 
 package jaxesa.label;
 
-public class BarcodePackage {
+public class BarcodePrintPackage {
 
     public LabelItem title = new LabelItem();
 
