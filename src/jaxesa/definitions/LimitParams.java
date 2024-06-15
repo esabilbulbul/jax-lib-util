@@ -11,7 +11,7 @@ package jaxesa.definitions;
  */
 public final class LimitParams 
 {
-    public static final int MAX_CACHE_ROW_NUMBER = 2000;//dont make it less than 2k
+    public static final int MAX_CACHE_ROW_NUMBER = 3000;//dont make it less than 2k
     public static final int MAX_CACHE_DURATION   = 60000;
 }
 

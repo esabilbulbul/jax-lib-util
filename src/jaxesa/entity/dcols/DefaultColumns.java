@@ -31,7 +31,7 @@ public class DefaultColumns
     @Basic(optional = false)
     @Column(name = "UID", nullable = false)
     public Long uid;
-    
+
     @ServerId
     @Basic(optional = false)
     @Column(name = "SERVER_ID", nullable = false)
@@ -64,7 +64,7 @@ public class DefaultColumns
     @Column(name = "BYUSER", length = 20)
     public String byuser  = "";
     
-    @Column(name = "CLIENT_IP", length = 15)
+    @Column(name = "CLIENT_IP", length = 39)
     public String clientIp;
     
     @Column(name = "CLIENT_DTIME")

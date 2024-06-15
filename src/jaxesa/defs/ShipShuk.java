@@ -23,6 +23,8 @@ public final class ShipShuk
     public static String SIGNUP_QUEUE_NEW_REQUEST = "signup#requests";
     
     public static String SIGNUP_QUEUE_NEW_MESSAGE = "signup#messages";
+    
+    //public static String gQUEUE_NAME_CALLBACK = "ss.frmwrk.callback.queue";
 }
 
 

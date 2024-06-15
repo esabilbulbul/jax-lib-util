@@ -44,10 +44,12 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLType;
 import java.text.DateFormat;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 import java.util.Random;
+import java.util.Set;
 import javax.mail.Authenticator;
 import javax.mail.Message;
 import javax.mail.PasswordAuthentication;
@@ -269,6 +271,34 @@ public final class Util
             }
         }
 
+    }
+    
+    public static class Tax
+    {
+        // if tax included Tax = (Total * TaxRate) / (1 + TaxRate)
+        public static BigDecimal calculate(String    psAmount, 
+                                           String    psTaxRate, 
+                                           boolean   pbTaxIncludedInTotal)
+        {
+            BigDecimal bdTotal    = new BigDecimal(psAmount);
+            BigDecimal bdTaxRate  = new BigDecimal(psTaxRate);
+
+            bdTaxRate = bdTaxRate.divide(new BigDecimal(100),  5, RoundingMode.HALF_DOWN);
+
+            BigDecimal bd1plusN   = new BigDecimal(1).add(bdTaxRate);
+            BigDecimal bdTax      = new BigDecimal(psTaxRate);
+
+            if (pbTaxIncludedInTotal==true)
+            {
+                bdTax = bdTotal.multiply(bdTaxRate).divide(bd1plusN, 5, RoundingMode.HALF_DOWN);
+            }
+            else
+            {
+                bdTax = bdTotal.multiply(bdTaxRate);
+            }
+
+            return bdTax;
+        }
     }
     
     //Memory DB
@@ -527,23 +557,39 @@ public final class Util
             }
         }
     }
-
+    
     public static class Str
     {
         static String QUOTE_SIGN = "\"";
+
+        public static String ifEmpty(String pText, String pReplaceWith)
+        {
+            if(pText==null)
+                return pReplaceWith;
+            
+            if(pText.trim().equals("")==true)
+                return pReplaceWith;
+            
+            return pText;
+        }
         
+        public static String dequote(String value) 
+        {
+            return value.replaceAll("^\"|\"$", "");
+        }
+
         public static String QUOTE(String pVal)
         {
             return QUOTE_SIGN + pVal + QUOTE_SIGN;
         }
-        
+
         public static String SQUOTE(String pVal)//SINGLE QUOTE
         {
             return "'" + pVal + "'";
         }
 
         
-        //Converts start Sign of each word to Upper Case
+        //Converts start letter of each word to Upper Case
         //The rest to the lower case
         public static String wordNormalize(String pStr)
         {
@@ -635,7 +681,7 @@ public final class Util
                 return false;
 
         }
-        
+
         //Shows pattern match result between two strings
         public static int SIMIL(String psBaseStr, String psTargetStr)
         {
@@ -646,15 +692,15 @@ public final class Util
             // The reason was ( sign was propriatery for regex and therefore throwing exception
             // http://www.dreamincode.net/forums/topic/281985-unclosed-group-near-index-error-when-using-stringsplit/
             //-----------------------------------------
-            
+
             String sBaseStr   = psBaseStr.replaceAll("[^a-zA-Z0-9]", "");
             String sTargetStr = psTargetStr.replaceAll("[^a-zA-Z0-9]", "");
-            
+
             Simil patternMatch = new Simil(sBaseStr);
-            
+
             return patternMatch.getSimilarityInPercentFor(sTargetStr);
         }
-        
+
         public static String rightPad(String psSource, String psPadChar, int piMaxLen)
         {
             String sPadding = "";
@@ -716,9 +762,9 @@ public final class Util
 
             return (sPadding + psSource);
         }
-    
+
     }            
-    
+
     public static class Types
     {
         public static Integer Generic2SQLTypes(Class pClassType)
@@ -764,6 +810,40 @@ public final class Util
     //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     public static class Format
     {
+        public static String maskDigits(String input, int digitsToMask, boolean maskFromLeft, char maskChar) 
+        {
+            if (input == null || input.length() == 0 || digitsToMask <= 0) 
+            {
+                return input;
+            }
+
+            int length = input.length();
+            StringBuilder maskedString = new StringBuilder();
+
+            if (maskFromLeft) 
+            {
+                // Mask digits from the left
+                int endIndex = Math.min(digitsToMask, length);
+                for (int i = 0; i < endIndex; i++) 
+                {
+                    maskedString.append(maskChar);
+                }
+                maskedString.append(input.substring(endIndex));
+            } 
+            else 
+            {
+                // Mask digits from the right
+                int startIndex = Math.max(0, length - digitsToMask);
+                maskedString.append(input.substring(0, startIndex));
+                for (int i = startIndex; i < length; i++) 
+                {
+                    maskedString.append(maskChar);
+                }
+            }
+
+            return maskedString.toString();
+        }
+
         public static int toInt(String psIntVal)
         {
             return Integer.parseInt(psIntVal);
@@ -1212,10 +1292,10 @@ public final class Util
                 NullVal.Val  = pValIfNull;
                 return NullVal;
             }
-            
+
             return null;
         }
-        
+
         public static String getValString(List<RowColumn> pRow, String pColName)
         {
             for (RowColumn RowN:pRow)
@@ -1325,7 +1405,7 @@ public final class Util
 
         public static Long GetDateTime_l_wo_MSeconds()
         {
-            SimpleDateFormat    DFormat = new SimpleDateFormat("YYYYMMddHHmmss");
+            SimpleDateFormat    DFormat = new SimpleDateFormat("yyyyMMddHHmmss");
 
             Date    DateNow             = new Date();
             String  sDateNow            = DFormat.format(DateNow);
@@ -1374,7 +1454,7 @@ public final class Util
 
         public static Long GetDateTime_l()
         {
-            SimpleDateFormat    DFormat = new SimpleDateFormat("YYYYMMddHHmmssS");
+            SimpleDateFormat    DFormat = new SimpleDateFormat("yyyyMMddHHmmssS");
 
             Date    DateNow             = new Date();
             String  sDateNow            = DFormat.format(DateNow);
@@ -1408,7 +1488,7 @@ public final class Util
         
         public static String GetDateTime_s()
         {
-            return GetDateTime_s("YYYYMMddHHmmssS");
+            return GetDateTime_s("yyyyMMddHHmmssS");
             /*
             SimpleDateFormat    DFormat = new SimpleDateFormat("YYYYMMddHHmmssS");
 
@@ -1516,6 +1596,23 @@ public final class Util
     //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     public static class HTTP
     {
+        //make sure there is no SQL injection
+        public static boolean isParamSafe(String pParam)
+        {
+            //if (pParam.contains("'")==true)//remove this don't add
+            //    return false;
+            
+            if (pParam.indexOf("INSERT")>=0)
+                return false;
+            
+            if (pParam.indexOf("TRUNCATE")>=0)
+                return false;
+            
+            if (pParam.indexOf("DELETE")>=0)
+                return false;
+            
+            return true;
+        }
         //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         //                              WARNING
         // In order to use this function on mother project
@@ -1882,7 +1979,25 @@ public final class Util
             {
                 return null;
             }
-        
+
+        }
+
+        public static Set<String> keys(JsonObject pJSO)
+        {
+            return pJSO.keySet();
+        }
+
+        public static String getValue(JsonObject pjsObj, String pKey)
+        {
+            try
+            {
+                //return pjsObj.get(pKey).toString();
+                return pjsObj.get(pKey).getAsString();
+            }
+            catch(Exception e)
+            {
+                return "";
+            }
         }
         
         public static boolean isEndofArray(Iterator<JsonNode> pjRoot)
@@ -1962,6 +2077,18 @@ public final class Util
             }
         }
         
+        /*
+            Sample Use:
+            
+            JsonArray jsonArray = (JsonArray) Util.JSON.toArray(sPostCodes);
+
+                    for (int j=0; j<jsonArray.size();j++)
+                    {
+
+                        JsonObject item = (JsonObject)jsonArray.get(j);
+
+                        JsonElement jePostCode  = item.get(KEY_POSTCODE);
+        */
         public static JsonArray toArray(String sJSONBuffer)
         {
             try
@@ -2703,6 +2830,15 @@ public final class Util
             
         }
         
+        public static <T> List<T> distinct(ArrayList<T> paList)
+        {
+            // Convert ArrayList to HashSet to remove duplicates
+            Set<T> set = new HashSet<>(paList);
+
+            // Convert HashSet back to ArrayList
+            return new ArrayList<>(set);
+        }
+        
         public static ArrayList<Object> distinctObject(ArrayList<Object> paObjList, String psDistinctFieldName)
         {
             try
@@ -2863,6 +2999,35 @@ public final class Util
             String CallerMethodName = new Throwable().getStackTrace()[1].getMethodName();
             String sHash = Util.Session.calcSessionHash(CallerMethodName);
             return sHash;
+        }
+    }
+
+    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    //
+    //                          SubClass Retention
+    //
+    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    public static class Reflection
+    {
+        // piLevelUp = 1 if the method just above
+        // piLevelUp = 2 if the method above in 2 layer
+        public static String getCallerMethodName(int piLevelUp)
+        {
+            try
+            {
+                //String sMethodName = new Throwable().getStackTrace()[1].getMethodName();
+                StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+
+                // The stackTrace[3] represents the caller method three levels up
+                StackTraceElement callerStackTraceElement = stackTrace[piLevelUp];
+                String callerMethodName = callerStackTraceElement.getMethodName();
+
+                return callerMethodName;
+            }
+            catch(Exception e)
+            {
+                throw e;
+            }
         }
     }
     
@@ -3163,6 +3328,73 @@ public final class Util
                 return checksumValue;
             }
         }
+    
+        public static class md5
+        {
+            public static String calculate(String pInput)
+            {
+                try
+                {
+                    MessageDigest md = MessageDigest.getInstance("MD5");
+                    md.update(pInput.getBytes());
+                    byte[] digest = md.digest();
+                    StringBuilder sb = new StringBuilder();
+                    
+                    for (byte b : digest) 
+                    {
+                        sb.append(String.format("%02x", b & 0xff));
+                    }
+                    
+                    return sb.toString();
+                }
+                catch(Exception e)
+                {
+                    return "";
+                }
+            }
+        }
+    }
+
+    public static class console
+    {
+        public static void println(String pText, boolean pbSkipFormat)
+        {
+            if(pbSkipFormat==true)
+                System.out.println(pText);
+            else
+            {
+                String sTimeStamp = Util.DateTime.GetDateTime_s();
+                System.out.println("[" + sTimeStamp + "] " + ":> " + " Data: " + pText);
+            }
+        }
+        
+        public static void clear(String pMsg)
+        {
+            try 
+            {
+                
+                final String os = System.getProperty("os.name");
+                if (os.contains("Windows")) 
+                {
+                    // For Windows
+                    new ProcessBuilder("cmd", "/c", "cls").inheritIO().start().waitFor();
+                } 
+                else 
+                {
+                    // For Unix-like systems
+                    System.out.print("\033[H\033[2J");
+                    System.out.flush();
+                }
+                
+                System.out.println("Util.console.clear() called: " + pMsg);
+            } 
+            catch (final Exception e) 
+            {
+                // Handle exceptions, e.g., InterruptedException
+                e.printStackTrace();
+            }
+        }
+
     }
 
     public static class misc

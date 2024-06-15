@@ -56,6 +56,7 @@ public class AnnoAttributes
     public MediaType                Consumes;
     public MethodTypes              MethodType;
     public VerificationType         TokenVerification;
+    public UserRole[]               UserRoleRequirements;
     public boolean                  isLoginMethod;
     public boolean                  isLoginVia;
     public String                   ClassPath;

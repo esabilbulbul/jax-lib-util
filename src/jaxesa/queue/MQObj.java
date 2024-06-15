@@ -14,7 +14,8 @@ public class MQObj
     public int     Index;//This will only be filled when read by the Qmanager
     public boolean Status;//true:Active, false:Inactive
     public String  FileName;
-    public long    RequestDate;//DateTime before sent to add
+    //public long    RequestDate;//DateTime before sent to add
+    public String  RequestDate;
     public long    InsertDate;
     public String  Reference;
     public Object  Data;

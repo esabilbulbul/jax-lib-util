@@ -12,6 +12,7 @@ package jaxesa.persistence.misc;
 public class RowColumn
 {
     public String Name;
+    public long   size;//size of val
     public Object Val;
     
     public RowColumn()

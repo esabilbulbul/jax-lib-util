@@ -26,6 +26,7 @@ public final class Caching
 
     public static final NamedQueryTypes CACHE_TYPE_ENTITY             = NamedQueryTypes.NONE;//Default for entities
     public static final NamedQueryTypes CACHE_TYPE_NAMED_QUERY        = NamedQueryTypes.NAMED_QUERY;
+    public static final NamedQueryTypes CACHE_TYPE_STORED_PROCEDURE   = NamedQueryTypes.STORED_PROCEDURE;
     /*
     public static final NamedQueryTypes CACHE_TYPE_NAMED_NATIVE_QUERY = NamedQueryTypes.NAMED_NATIVE_QUERY;//
     public static final NamedQueryTypes CACHE_TYPE_STORED_PROCEDURE   = NamedQueryTypes.STORED_PROCEDURE;
@@ -77,6 +78,14 @@ public final class Caching
         if (pCacheType==CACHE_TYPE_NAMED_QUERY)
         {                
             sMemKey += "." + "NMQ";
+        }
+        if (pCacheType==NamedQueryTypes.NAMED_NATIVE_QUERY)
+        {                
+            sMemKey += "." + "NQ";
+        }
+        else if (pCacheType==CACHE_TYPE_STORED_PROCEDURE)
+        {
+            sMemKey += "." + "SP";
         }
         /*
         else if (pCacheType==CACHE_TYPE_NAMED_NATIVE_QUERY)

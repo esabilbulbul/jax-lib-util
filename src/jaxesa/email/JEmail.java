@@ -47,7 +47,12 @@ public class JEmail
     }
 
     //pContentTypes = text/html
-    public boolean send(String pFrom, String pTo, String pSubject, String pPWD, String pContent, String pContentType)
+    public boolean send(String pFrom, 
+                        String pTo, 
+                        String pSubject, 
+                        String pPWD, 
+                        String pContent, 
+                        String pContentType)
     {
         try
         {

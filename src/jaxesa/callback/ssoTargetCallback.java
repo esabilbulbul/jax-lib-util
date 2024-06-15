@@ -3,19 +3,16 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package jaxesa.persistence.misc;
+package jaxesa.callback;
+
+import java.lang.reflect.Method;
 
 /**
  *
  * @author Administrator
  */
-public enum NamedQueryTypes 
+public class ssoTargetCallback
 {
-    NONE,
-    NAMED_QUERY,
-    NAMED_NATIVE_QUERY,
-    NATIVE_QUERY,
-    STORED_PROCEDURE
+    public String methodName;
+    public Method method;
 }
-
-

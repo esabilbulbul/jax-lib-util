@@ -15,6 +15,7 @@ import java.util.List;
 public class CacheQueryResultSet 
 {
     public long timeStamp = -1;//if -1 always will fetch data
+    public long hashCRC = -1;//this is the hash of the query that prepared the data on cache
     public List<List<RowColumn>>  RowSet = new ArrayList<List<RowColumn>>();
     public ArrayList<QueryRunParam> params = new ArrayList<QueryRunParam>();
 }

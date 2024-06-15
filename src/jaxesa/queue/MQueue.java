@@ -151,7 +151,8 @@ public class MQueue
         NewData.FileName    = "";
         NewData.Status      = true;//Active
         NewData.Reference   = "";
-        NewData.RequestDate = Util.DateTime.GetDateTime_l();
+        NewData.RequestDate = Util.DateTime.GetDateTime_s("YYYYMMdd-HHmmssS");
+        //NewData.RequestDate = Util.DateTime.GetDateTime_l();
         
         add(NewData);
     }
@@ -164,7 +165,8 @@ public class MQueue
         NewData.FileName    = "";
         NewData.Status      = true;//Active
         NewData.Reference   = RefId;
-        NewData.RequestDate = Util.DateTime.GetDateTime_l();
+        //NewData.RequestDate = Util.DateTime.GetDateTime_l();
+        NewData.RequestDate = Util.DateTime.GetDateTime_s("YYYYMMdd-HHmmssS");
         
         add(NewData);
     }

@@ -12,5 +12,6 @@ package jaxesa.persistence.annotations;
 public enum ParameterMode 
 {
     IN,
-    OUT
+    OUT,
+    INOUT
 }
