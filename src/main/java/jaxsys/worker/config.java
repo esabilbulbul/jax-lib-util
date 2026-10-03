@@ -6,6 +6,7 @@
 package jaxsys.worker;
 
 import com.google.gson.JsonObject;
+import java.io.File;
 import java.util.ArrayList;
 import jaxsys.worker.ssoWorkers;
 import javax.xml.parsers.DocumentBuilder;
@@ -50,15 +51,20 @@ public final class config
     static String PRM_NAME_PREFIX_WORKER = "worker_";
 
     // App.xml file = psConfigFile
-    public static boolean readConfig(String psConfigFile)
+    public static boolean readConfig(String psConfigFolder, String psConfigFile)
     {
         try
         {
             gConfig = new ssoWorkerConfig();//deletes the old values
-
+            
+            /*
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             DocumentBuilder builder = factory.newDocumentBuilder();
             Document doc = builder.parse(psConfigFile);
+            */
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            Document doc = builder.parse(new File(psConfigFolder, psConfigFile));
             doc.getDocumentElement().normalize();
 
             System.out.println("Root element :" + doc.getDocumentElement().getNodeName());
